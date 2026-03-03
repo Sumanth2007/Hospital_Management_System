@@ -14,8 +14,75 @@ from datetime import timedelta
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from email_validator import validate_email, EmailNotValidError
+import re
+from flask import Blueprint, request, jsonify
 
 auth_bp = Blueprint("auth", __name__)
+
+# Password Validation Function
+def validate_password(password):
+
+    if len(password) < 8:
+        return "Password must be at least 8 characters long"
+
+    if not re.search(r"[A-Z]", password):
+        return "Password must contain at least one uppercase letter"
+
+    if not re.search(r"[a-z]", password):
+        return "Password must contain at least one lowercase letter"
+
+    if not re.search(r"[0-9]", password):
+        return "Password must contain at least one number"
+
+    if not re.search(r"[!@#$%^&*(),.?\":{}|<>]", password):
+        return "Password must contain at least one special character"
+
+    return None
+
+# NAME VALIDATION 
+def validate_name(name):
+
+    if not name:
+        return "Name is required"
+
+    name = name.strip()
+
+    if len(name) < 4:
+        return "Name must be at least 4 characters long"
+
+    if not name.replace(" ", "").isalpha():
+        return "Name should contain only letters"
+
+    return None
+
+# PHONE VALIDATION 
+def validate_phone(phone):
+
+    if not phone:
+        return "Phone number is required"
+
+    if not phone.isdigit():
+        return "Phone number must contain only digits"
+
+    if len(phone) != 10:
+        return "Phone number must be 10 digits"
+
+    if phone[0] not in ["6", "7", "8", "9"]:
+        return "Invalid Indian phone number"
+
+    return None
+
+# AGE VALIDATION 
+def validate_age(age):
+    try:
+        age = int(age)
+        if age < 1 or age > 120:
+            return "Age must be between 1 and 120"
+    except:
+        return "Age must be numeric"
+
+    return None
 
 # ---------------- REGISTER (PATIENT ONLY) ----------------
 @auth_bp.route("/register", methods=["POST"])
@@ -31,6 +98,34 @@ def register():
 
     if not all([name, email, password]):
         return jsonify({"message": "All required fields are mandatory"}), 400
+
+    # Name validation
+    name_error = validate_name(name)
+    if name_error:
+        return jsonify({"message": name_error}), 400
+    
+    # Email validation
+    try:
+        valid = validate_email(email)
+        email = valid.email  # normalized email
+    except EmailNotValidError as e:
+        return jsonify({"message": str(e)}), 400
+
+    #  Password validation
+    password_error = validate_password(password)
+    if password_error:
+        return jsonify({"message": password_error}), 400
+
+    # Phone validation
+    phone_error = validate_phone(phone)
+    if phone_error:
+        return jsonify({"message": phone_error}), 400
+
+    # Age validation
+    age_error = validate_age(age)
+    if age_error:
+        return jsonify({"message": age_error}), 400
+
 
     existing_user = User.query.filter_by(email=email).first()
     if existing_user:
