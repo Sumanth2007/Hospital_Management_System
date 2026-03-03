@@ -17,13 +17,13 @@ CORS(
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
-# 🔥 Hardcoded Configuration
+#  Hardcoded Configuration
 app.config["SECRET_KEY"] = "this_should_be_at_least_32_characters_long"
 app.config["JWT_SECRET_KEY"] = "this_should_be_at_least_32_characters_long"
 app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///" + os.path.join(BASE_DIR, "hms.db")
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-jwt = JWTManager(app)  # ✅ Initialize JWT
+jwt = JWTManager(app)  #  Initialize JWT
 
 db.init_app(app)
 app.register_blueprint(auth_bp, url_prefix="/auth")
